@@ -1,85 +1,51 @@
-﻿using System.Net.Sockets;
+﻿using System.IO;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Xml;
 
 namespace ConsoleClient1
 {
     internal class Program
     {
-        public enum operation
-        {
-            plus,
-            minus,
-            mult,
-            div
-        }
 
-        class request
-        {
-            public double v1 { get; set; }
-            public double v2 { get; set; }
-            public operation op { get; set; }
-        }
-        class response
-        {
-            public double result { get; set; }
-            public string message { get; set; }
-            public bool isError => !String.IsNullOrEmpty(message);
-        }
+        static bool quit = false;
 
+        static void readConsole(NetworkStream stream)
+        {
+            while (!quit)
+            {
+                var str = Console.ReadLine();
+                if (str == "/q") { str = "[end]"; quit = true; }
+                var bytes = Encoding.UTF8.GetBytes(str);
+                stream.Write(bytes, 0, bytes.Length); // отправляем запрос
+            }
+        }
 
         static void Main(string[] args)
         {
-            Console.Write("Enter value 1: ");
-            double v1i, v2i;
-            if (!Double.TryParse(Console.ReadLine(), out v1i))
-            {
-                Console.WriteLine("Wrong number format!!!");
-                return;
-            }
-            Console.Write("Enter value 2: ");
-            if (!Double.TryParse(Console.ReadLine(), out v2i))
-            {
-                Console.WriteLine("Wrong number format!!!");
-                return;
-            }
-            Console.Write("Enter operation: ");
-            var operationS = Console.ReadLine();
-            operation opi = operation.plus;
-            switch (operationS)
-            {
-                case "+": opi = operation.plus; break;
-                case "-": opi = operation.minus; break;
-                case "/": opi = operation.div; break;
-                case "*": opi = operation.mult; break;
-                default: Console.WriteLine($"Wrong operation: {operationS}"); return;
-            }
 
             TcpClient tcpClient = new TcpClient();
             tcpClient.Connect("127.0.0.1", 10001);
             using (var stream = tcpClient.GetStream())
             {
-                // формируем запрос на сервере
-                request r = new request() { v1 = v1i, v2 = v2i, op = opi };
-                var rString = JsonSerializer.Serialize(r);
-                var bytes = Encoding.UTF8.GetBytes(rString);
-
-                stream.Write(bytes, 0, bytes.Length); // отправляем запрос
-                stream.Flush();
-                // читаем ответ сервера
-                byte[] buf = new byte[512];
-                List<byte> inBytes = new List<byte>();
-                do
+                Task.Run(() => readConsole(stream)); // создаем поток для чтения сведений с консоли
+                while (!quit)
                 {
-                    int c = stream.Read(buf, 0, buf.Length);
-                    inBytes.AddRange(buf.Take(c));
+                    byte[] buf = new byte[512];
+                    List<byte> bytes = new List<byte>();
+                    while (stream.DataAvailable) // проверяем есть ли что-то в потоке
+                    { 
+                        int c = stream.Read(buf, 0, buf.Length); // читаем поток
+                        bytes.AddRange(buf.Take(c));
+                    }
+                    if (bytes.Count > 0) // если что-то пришло
+                    {
+                        var str = Encoding.UTF8.GetString(bytes.ToArray()); // преобразуем в строку
+                        Console.WriteLine(str);
+                    }
+       
                 }
-                while (stream.DataAvailable);
-                // разбираем что нам прислал сервер
-                var resp = JsonSerializer.Deserialize<response>(Encoding.UTF8.GetString(inBytes.ToArray()));
-
-                // выводим ответ
-                Console.WriteLine($"Answer is: {resp.result}");
             }
             tcpClient.Close();
         }

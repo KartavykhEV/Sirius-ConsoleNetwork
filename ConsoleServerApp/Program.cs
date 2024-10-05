@@ -6,23 +6,24 @@ namespace ConsoleServerApp
 {
     internal class Program
     {
-        public enum operation
+
+        /// <summary>
+        ///  Клиенты сервера
+        /// </summary>
+        static List<chatClient> chatClients = new List<chatClient>();
+
+        static void runClient(TcpClient tcpClient)
         {
-            plus,
-            minus,
-            mult,
-            div
+            chatClient client = new chatClient(tcpClient);
+            lock (chatClients)
+                chatClients.Add(client);
+            client.OnMessageRecieved += Client_OnMessageRecieved;
+            client.run();
         }
-        class request
+
+        private static void Client_OnMessageRecieved(string clnAddress, string message)
         {
-            public double v1 { get; set; }
-            public double v2 { get; set; }
-            public operation op { get; set; }
-        }
-        class response
-        {
-            public double result { get; set; }
-            public string message { get; set; }
+            Console.WriteLine($"{message} from {clnAddress}");
         }
 
         static void Main(string[] args)
@@ -32,42 +33,8 @@ namespace ConsoleServerApp
             while (true)
             {
                 var client = listener.AcceptTcpClient();
+                Task.Run(() => { runClient(client); });
 
-                using (var stream = client.GetStream())
-                {
-                    byte[] buf = new byte[10];
-                    List<byte> bytes = new List<byte>();
-                    do
-                    {
-                        int c = stream.Read(buf, 0, buf.Length);
-                        bytes.AddRange(buf.Take(c));
-                    }
-                    while (stream.DataAvailable);
-                    var rString = Encoding.UTF8.GetString(bytes.ToArray());
-                    var r = JsonSerializer.Deserialize<request>(rString);
-                    response response = new response();
-                    if (r.op == operation.div && r.v2 == 0)
-                    {
-                        response.message = "Делить на 0 нельзя!";
-                    }
-                    else
-                    {
-                        string opS = "";
-                        double result = 0;
-                        switch (r.op)
-                        {
-                            case operation.plus: result = (r.v1 + r.v2); opS = "+"; break;
-                            case operation.minus: result = (r.v1 - r.v2); opS = "-"; break;
-                            case operation.mult: result = (r.v1 * r.v2); opS = "*"; break;
-                            case operation.div: result = (r.v1 / r.v2); opS = "/"; break;
-                        }
-                        Console.WriteLine($"{r.v1}{opS}{r.v2} = {result}");
-                        response.result = result;
-                    }
-                    var data = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(response));
-                    stream.Write(data, 0, data.Length);
-                    //Console.WriteLine("Recieved message: " + Encoding.UTF8.GetString(bytes.ToArray()));
-                }
 
             }
         }
