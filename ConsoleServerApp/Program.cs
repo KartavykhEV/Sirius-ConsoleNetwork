@@ -28,7 +28,13 @@ namespace ConsoleServerApp
 
         static void Main(string[] args)
         {
-            TcpListener listener = new TcpListener(System.Net.IPAddress.Any, 10001);
+            Int16 port = 9082;
+            broadcastServer bServer = new broadcastServer(port);
+            bServer.run(); // запуск сервера
+
+            TcpListener listener = new TcpListener(System.Net.IPAddress.Any, port);
+            Console.WriteLine($"Started TCP server at {port} port.");
+
             listener.Start();
             while (true)
             {

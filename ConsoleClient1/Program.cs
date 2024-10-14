@@ -25,8 +25,12 @@ namespace ConsoleClient1
         static void Main(string[] args)
         {
 
+            var bClient = new locateServerClient();
+            var endpoint = bClient.locateServer();
+
+
             TcpClient tcpClient = new TcpClient();
-            tcpClient.Connect("127.0.0.1", 10001);
+            tcpClient.Connect(endpoint);
             using (var stream = tcpClient.GetStream())
             {
                 Task.Run(() => readConsole(stream)); // создаем поток для чтения сведений с консоли
@@ -44,7 +48,7 @@ namespace ConsoleClient1
                         var str = Encoding.UTF8.GetString(bytes.ToArray()); // преобразуем в строку
                         Console.WriteLine(str);
                     }
-       
+                    Task.Delay(300);
                 }
             }
             tcpClient.Close();

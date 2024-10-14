@@ -30,27 +30,30 @@ namespace ConsoleServerApp
         public void run()
         {
             using (var stream = tcpClient.GetStream())
-                while (true)
+                while (tcpClient.Connected)
                 {
                     byte[] buf = new byte[10];
                     List<byte> bytes = new List<byte>();
-                    do
+                    while (stream.DataAvailable)
                     {
                         int c = stream.Read(buf, 0, buf.Length);
                         bytes.AddRange(buf.Take(c));
                     }
-                    while (stream.DataAvailable);
-                    var str = Encoding.UTF8.GetString(bytes.ToArray());
-                    if (str == "[end]")
+                    if (bytes.Count > 0)
                     {
-                        Console.WriteLine($"Client {tcpClient.Client.RemoteEndPoint} disconnecting...");
-                        break;
+                        var str = Encoding.UTF8.GetString(bytes.ToArray());
+                        if (str == "[end]")
+                        {
+                            Console.WriteLine($"Client {tcpClient.Client.RemoteEndPoint} disconnecting...");
+                            break;
+                        }
+                        else //  прилетело что-то полезное
+                        {
+                            if (OnMessageRecieved != null)
+                                OnMessageRecieved.Invoke(tcpClient.Client.RemoteEndPoint.ToString(), str);
+                        }
                     }
-                    else //  прилетело что-то полезное
-                    {
-                        if (OnMessageRecieved != null)
-                            OnMessageRecieved.Invoke(tcpClient.Client.RemoteEndPoint.ToString(), str);
-                    }
+                    Task.Delay(300);
                 }
         }
 
