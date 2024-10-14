@@ -11,18 +11,20 @@ namespace ConsoleClient1
 
         static bool quit = false;
 
-        static void readConsole(NetworkStream stream)
+        static async Task readConsole(NetworkStream stream)
         {
             while (!quit)
             {
+                Console.Write("Enter text: ");
                 var str = Console.ReadLine();
                 if (str == "/q") { str = "[end]"; quit = true; }
                 var bytes = Encoding.UTF8.GetBytes(str);
                 stream.Write(bytes, 0, bytes.Length); // отправляем запрос
+                await Task.Delay(100);
             }
         }
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
 
             var bClient = new locateServerClient();
@@ -37,9 +39,10 @@ namespace ConsoleClient1
 
             TcpClient tcpClient = new TcpClient();
             tcpClient.Connect(endpoint);
+            Console.WriteLine("Connected to server");
             using (var stream = tcpClient.GetStream())
             {
-                Task.Run(() => readConsole(stream)); // создаем поток для чтения сведений с консоли
+                Task.Run(async () => readConsole(stream)); // создаем поток для чтения сведений с консоли
                 while (!quit)
                 {
                     byte[] buf = new byte[512];
@@ -54,7 +57,7 @@ namespace ConsoleClient1
                         var str = Encoding.UTF8.GetString(bytes.ToArray()); // преобразуем в строку
                         Console.WriteLine(str);
                     }
-                    Task.Delay(300);
+                    await Task.Delay(300);
                 }
             }
             tcpClient.Close();

@@ -23,10 +23,10 @@ namespace ConsoleServerApp
 
         private static void Client_OnMessageRecieved(string clnAddress, string message)
         {
-            Console.WriteLine($"{message} from {clnAddress}");
+            Console.WriteLine($"{clnAddress} said: {message}");
         }
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             Int16 port = 9082;
             broadcastServer bServer = new broadcastServer(port);
@@ -38,8 +38,8 @@ namespace ConsoleServerApp
             listener.Start();
             while (true)
             {
-                var client = listener.AcceptTcpClient();
-                Task.Run(() => { runClient(client); });
+                var client = await listener.AcceptTcpClientAsync();
+                runClient(client); 
 
 
             }

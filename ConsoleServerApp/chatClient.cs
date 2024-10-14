@@ -27,7 +27,7 @@ namespace ConsoleServerApp
 
         }
 
-        public void run()
+        public async Task run()
         {
             using (var stream = tcpClient.GetStream())
                 while (tcpClient.Connected)
@@ -36,7 +36,7 @@ namespace ConsoleServerApp
                     List<byte> bytes = new List<byte>();
                     while (stream.DataAvailable)
                     {
-                        int c = stream.Read(buf, 0, buf.Length);
+                        int c = await stream.ReadAsync(buf, 0, buf.Length);
                         bytes.AddRange(buf.Take(c));
                     }
                     if (bytes.Count > 0)
@@ -53,7 +53,7 @@ namespace ConsoleServerApp
                                 OnMessageRecieved.Invoke(tcpClient.Client.RemoteEndPoint.ToString(), str);
                         }
                     }
-                    Task.Delay(300);
+                    await Task.Delay(300);
                 }
         }
 
