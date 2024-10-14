@@ -27,7 +27,13 @@ namespace ConsoleClient1
 
             var bClient = new locateServerClient();
             var endpoint = bClient.locateServer();
-
+            if (endpoint == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("No servers found, exiting...");
+                Console.ResetColor();   
+                return;
+            }
 
             TcpClient tcpClient = new TcpClient();
             tcpClient.Connect(endpoint);

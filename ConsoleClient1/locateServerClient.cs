@@ -20,10 +20,10 @@ namespace ConsoleClient1
         /// <returns></returns>
         internal IPEndPoint locateServer()
         {
-            var udpClient = new UdpClient() { EnableBroadcast = true };
             foreach (var address in Dns.GetHostAddresses(Dns.GetHostName()))
                 if (address.AddressFamily == AddressFamily.InterNetwork)
                 {
+                    var udpClient = new UdpClient() { EnableBroadcast = true };
                     udpClient.Client.Bind(new IPEndPoint(address, 0));
                     var serverEp = new IPEndPoint(IPAddress.Any, 0);
                     int bPort = 9080;
