@@ -18,6 +18,7 @@ namespace ConsoleClient1
                 Console.Write("Enter text: ");
                 var str = Console.ReadLine();
                 if (str == "/q") { str = "[end]"; quit = true; }
+                var obj = new ClassLibraryNetwork.clnMessage() { message = str };
                 var bytes = Encoding.UTF8.GetBytes(str);
                 stream.Write(bytes, 0, bytes.Length); // отправляем запрос
                 await Task.Delay(100);
