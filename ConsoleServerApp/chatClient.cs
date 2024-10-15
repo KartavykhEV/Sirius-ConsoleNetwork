@@ -9,6 +9,7 @@ namespace ConsoleServerApp
 {
 
     public delegate void MessageRecieved(string clnAddress, string message);
+    internal delegate void Disconnecting(chatClient client);
 
     /// <summary>
     /// Клиент 
@@ -17,8 +18,14 @@ namespace ConsoleServerApp
     {
         public TcpClient tcpClient;
 
-
+        /// <summary>
+        /// Событие при поступлении сообщения от клиента
+        /// </summary>
         public event MessageRecieved OnMessageRecieved;
+        /// <summary>
+        /// Событие при отключении клиента от сервера
+        /// </summary>
+        internal event Disconnecting OnDisconnecting;
 
         public chatClient(TcpClient tcpClient)
         {
@@ -45,6 +52,7 @@ namespace ConsoleServerApp
                         if (str == "[end]")
                         {
                             Console.WriteLine($"Client {tcpClient.Client.RemoteEndPoint} disconnecting...");
+                            OnDisconnecting?.Invoke(this);
                             break;
                         }
                         else //  прилетело что-то полезное
@@ -57,5 +65,15 @@ namespace ConsoleServerApp
                 }
         }
 
+        internal void Send(string message, string fromAddress)
+        {
+            if (tcpClient.Client.RemoteEndPoint.ToString() != fromAddress)
+            {
+                var stream = tcpClient.GetStream();
+                var bytes = Encoding.UTF8.GetBytes(message);
+                stream.Write(bytes, 0, bytes.Length);
+            }
+
+        }
     }
 }

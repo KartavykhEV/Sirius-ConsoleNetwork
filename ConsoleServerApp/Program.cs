@@ -18,12 +18,22 @@ namespace ConsoleServerApp
             lock (chatClients)
                 chatClients.Add(client);
             client.OnMessageRecieved += Client_OnMessageRecieved;
+            client.OnDisconnecting += Client_OnDisconnecting;
             client.run();
+        }
+
+        private static void Client_OnDisconnecting(chatClient client)
+        {
+            lock(chatClients)
+                chatClients.Remove(client);
         }
 
         private static void Client_OnMessageRecieved(string clnAddress, string message)
         {
             Console.WriteLine($"{clnAddress} said: {message}");
+            lock (chatClients)
+                foreach (chatClient client in chatClients)
+                    client.Send(message, clnAddress);
         }
 
         static async Task Main(string[] args)
